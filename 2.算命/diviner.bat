@@ -7,6 +7,8 @@ setlocal enabledelayedexpansion
 chcp 936 > NUL
 
 title 算命大师
+
+:start
 set /p str=请输入日期，格式为 year/month/day，如 1999/7/19  
 
 for /f "tokens=1,2,3,* delims=/" %%a in ("%str%") do (
@@ -15,12 +17,33 @@ for /f "tokens=1,2,3,* delims=/" %%a in ("%str%") do (
     set day=%%c
 )
 
-if %year% leq 0   echo 无效输入 goto end
-if %month% leq 0  echo 无效输入 & goto end
-if %month% geq 32 echo 无效输入 & goto end
-if %day% leq 0    echo 无效输入 & goto end
-if %day% geq 32   echo 无效输入 & goto end
+:: 错误提示信息
+set error=请输入正确的日期
 
+:: 闰年判断, flag=1 表示该年为闰年
+set /a flag="^!(year %% 4) & ^!(^!(year %% 100)) | ^!(year %% 400)"
+
+:: 日期合法性检测
+if %year% leq 0   echo %error% & goto end
+if %month% leq 0  echo %error% & goto end
+if %month% geq 13 echo %error% & goto end
+if %day%   leq 0  echo %error% & goto end
+
+if %month% equ 1 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 3 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 4 if %day% geq 31 echo %error% & goto end else goto core
+if %month% equ 5 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 6 if %day% geq 31 echo %error% & goto end else goto core
+if %month% equ 7 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 8 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 9 if %day% geq 31 echo %error% & goto end else goto core
+if %month% equ 10 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 11 if %day% geq 31 echo %error% & goto end else goto core
+if %month% equ 12 if %day% geq 32 echo %error% & goto end else goto core
+if %month% equ 2 if %flag% equ 1 if %day% geq 30 echo %error% & goto end else goto core
+if %month% equ 2 if %flag% equ 0 if %day% geq 29 echo %error% & goto end else goto core
+
+:core
 :: 输出生肖
 set zodiac=猴鸡狗猪鼠牛虎兔龙蛇马羊
 set /a yy=%year%%%12
@@ -43,4 +66,4 @@ if %monthAndDay% leq 1221 echo 射手座 & goto end
 echo 摩羯座 & goto end
 
 :end
-pause
+goto start
