@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>sysMonitor</class>
+ <widget class="QWidget" name="sysMonitor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>720</width>
+    <height>576</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QTabWidget" name="selectTab">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>720</width>
+     <height>576</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QTabBar::tab{width:90}
+QTabBar::tab{height:30}</string>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>16</width>
+     <height>16</height>
+    </size>
+   </property>
+   <widget class="QWidget" name="tab_1">
+    <attribute name="title">
+     <string>Process</string>
+    </attribute>
+    <widget class="QTableWidget" name="processInfo">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>720</width>
+       <height>505</height>
+      </rect>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SingleSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="showGrid">
+      <bool>false</bool>
+     </property>
+     <property name="rowCount">
+      <number>0</number>
+     </property>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>125</number>
+     </attribute>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>30</number>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>40</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>PID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>PPID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Threads</string>
+      </property>
+     </column>
+    </widget>
+    <widget class="QLineEdit" name="processLineEdit">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>520</y>
+       <width>300</width>
+       <height>21</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_2">
+    <attribute name="title">
+     <string>CPU</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="tab_3">
+    <attribute name="title">
+     <string>Memory</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="tab_4">
+    <attribute name="title">
+     <string>System</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="tab_5">
+    <attribute name="title">
+     <string>About</string>
+    </attribute>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
