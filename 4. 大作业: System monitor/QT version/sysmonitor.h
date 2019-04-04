@@ -3,27 +3,18 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <lm.h>
 
 #include <QWidget>
-#include <QMap>
-
+#include <QSysInfo>
+#include <QHostInfo>
+#include <QDebug>
 
 #include "ui_sysmonitor.h"
 
-struct processInfo
-{
-    DWORD pid;
-    QString name;
-    DWORD ppid;
-    DWORD threads;
-    processInfo(DWORD &a, QString &str, DWORD &b, DWORD &c)
-    {
-        pid = a;
-        name = str;
-        ppid = b;
-        threads = c;
-    }
-};
+#define GBytes (1024 * 1024 * 1024)
+#define MBytes (1024 * 1024)
+#define KBytes (1024)
 
 class sysMonitor : public QWidget
 {
@@ -34,10 +25,10 @@ public:
 
 public:
     void getProcessInfo();
+    void getSystemInfo();
+    void getOtherInfo();
 
 private:
-    QMap<DWORD, processInfo> allProcesses;
-
     Ui_sysMonitor ui;
 };
 
