@@ -8,6 +8,8 @@ int main(int argc, char *argv[])
     sysMonitor sm;
     sm.show();
     sm.getProcessInfo();
+    sm.getSystemInfo();
+    sm.getOtherInfo();
 
     return a.exec();
 }
