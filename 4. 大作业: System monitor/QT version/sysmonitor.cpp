@@ -3,11 +3,11 @@
 
 sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     ui.setupUi(this);
+    ui.processInfo->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 }
 
 void sysMonitor::getProcessInfo() {
     // 获取进程信息
-    int counter;
     PROCESSENTRY32 currentProcess;
     currentProcess.dwSize = sizeof(currentProcess);
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -16,6 +16,7 @@ void sysMonitor::getProcessInfo() {
         return;
     }
 
+    int counter;
     BOOL bMore = Process32First(hSnapshot, &currentProcess);
     while (bMore) {
         DWORD pid = currentProcess.th32ProcessID;
@@ -24,10 +25,6 @@ void sysMonitor::getProcessInfo() {
             (QString::fromUtf16(reinterpret_cast<const unsigned short *>(
                 currentProcess.szExeFile)));
         DWORD threads = currentProcess.cntThreads;
-
-        if (!allProcesses.contains(pid))
-            allProcesses.insert(pid, processInfo(pid, exeName, ppid, threads));
-
         counter = ui.processInfo->rowCount();
         ui.processInfo->insertRow(counter);
         ui.processInfo->setItem(counter, 0, new QTableWidgetItem(QString::number((pid))));
@@ -39,4 +36,45 @@ void sysMonitor::getProcessInfo() {
     }
 
     CloseHandle(hSnapshot);
+}
+
+void sysMonitor::getSystemInfo()
+{
+    SYSTEM_INFO sysInfo;
+    GetNativeSystemInfo(&sysInfo);
+    if(sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
+            sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
+        ui.osTypeLabel->setText("64-bit");
+    }
+    else {
+        ui.osTypeLabel->setText("32-bit");
+    }
+
+    DWORD processorCoreNum = sysInfo.dwNumberOfProcessors;
+    ui.coreNumLabel->setText(QString::number(processorCoreNum));
+}
+
+void sysMonitor::getOtherInfo()
+{
+    // 获取计算机名称
+    ui.localHostNameLabel->setText(QHostInfo::localHostName());
+
+    // 获取CPU型号
+    QSettings *CPU = new QSettings("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",QSettings::NativeFormat);
+    QString m_cpuDescribe = CPU->value("ProcessorNameString").toString();
+    delete CPU;
+    ui.cpuInfoLabel->setText(m_cpuDescribe);
+
+    // 获取内存信息
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    GlobalMemoryStatusEx(&statex);
+    double m_totalMem = statex.ullTotalPhys * 1.0/ GBytes;
+    double m_freeMem = statex.ullAvailPhys * 1.0 / GBytes;
+
+    QString m_memDescription = "可用" + QString::number(m_freeMem, 'f', 2) + " GB / 共" + QString::number(m_totalMem, 'f', 2) + " GB";
+    ui.memoryInfoLabel->setText(m_memDescription);
+
+    // 获取操作系统版本
+    ui.osInfoLabel->setText(QSysInfo::prettyProductName());
 }
