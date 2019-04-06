@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Task manager</string>
+   <string>System monitor</string>
   </property>
   <widget class="QTabWidget" name="selectTab">
    <property name="geometry">
@@ -27,7 +27,7 @@
 QTabBar::tab{height:30}</string>
    </property>
    <property name="currentIndex">
-    <number>4</number>
+    <number>0</number>
    </property>
    <property name="iconSize">
     <size>
@@ -102,11 +102,86 @@ QTabBar::tab{height:30}</string>
       </property>
      </column>
     </widget>
+    <widget class="QPushButton" name="refreshProcessBtn">
+     <property name="geometry">
+      <rect>
+       <x>590</x>
+       <y>510</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Refresh</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="killProcessBtn">
+     <property name="geometry">
+      <rect>
+       <x>470</x>
+       <y>510</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Kill</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
      <string>CPU</string>
     </attribute>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>20</y>
+       <width>640</width>
+       <height>250</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>CPU Usage</string>
+     </property>
+     <widget class="QChartView" name="cpuRatioChart" native="true">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>20</y>
+        <width>580</width>
+        <height>221</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>300</y>
+       <width>640</width>
+       <height>200</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>CPU Information</string>
+     </property>
+     <widget class="QLabel" name="cpuRatioTest">
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>60</y>
+        <width>100</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_3">
     <attribute name="title">
@@ -216,7 +291,7 @@ QTabBar::tab{height:30}</string>
     <attribute name="title">
      <string>About</string>
     </attribute>
-    <widget class="QWidget" name="formLayoutWidget">
+    <widget class="QGroupBox" name="formGroupBox">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -224,6 +299,9 @@ QTabBar::tab{height:30}</string>
        <width>611</width>
        <height>321</height>
       </rect>
+     </property>
+     <property name="title">
+      <string>About</string>
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
@@ -355,6 +433,14 @@ QTabBar::tab{height:30}</string>
    </widget>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QChartView</class>
+   <extends>QWidget</extends>
+   <header location="global">QChartView</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
