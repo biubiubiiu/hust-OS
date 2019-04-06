@@ -9,6 +9,8 @@
 #include <QSysInfo>
 #include <QHostInfo>
 #include <QDebug>
+#include <QtCharts>
+QT_CHARTS_USE_NAMESPACE
 
 #include "ui_sysmonitor.h"
 
@@ -27,9 +29,13 @@ public:
     void getProcessInfo();
     void getSystemInfo();
     void getOtherInfo();
+    void getCpuUsage();
 
 private:
     Ui_sysMonitor ui;
+
+private slots:
+    void ProcessInfoRefresh();
 };
 
 #endif // SYSMONITOR_H
