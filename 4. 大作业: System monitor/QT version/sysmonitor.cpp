@@ -1,16 +1,17 @@
 #include <QtGui>
 #include "sysmonitor.h"
 
-qint64 CompareFileTime(const FILETIME &time1, const FILETIME &time2) {
-    qint64 a = ((qint64(time1.dwHighDateTime) << 32) | time1.dwLowDateTime);
-    qint64 b = ((qint64(time2.dwHighDateTime) << 32) | time2.dwLowDateTime);
-    return (b - a);
-}
-
 sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     ui.setupUi(this);
     ui.processInfo->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);    
     connect(ui.refreshProcessBtn, SIGNAL(clicked()), this, SLOT(ProcessInfoRefresh()));
+
+    Chart *chart = new Chart;
+    chart->setFunc(getCpuUsage);
+    chart->legend()->hide();
+    chart->setAnimationOptions(QChart::AllAnimations);
+    ui.cpuRatioChart->setChart(chart);
+    ui.cpuRatioChart->setRenderHint(QPainter::Antialiasing);
 }
 
 void sysMonitor::getProcessInfo() {
@@ -87,43 +88,53 @@ void sysMonitor::getOtherInfo()
     ui.osInfoLabel->setText(QSysInfo::prettyProductName());
 }
 
-void sysMonitor::getCpuUsage()
+qint64 CompareFileTime(const FILETIME &time1, const FILETIME &time2) {
+    qint64 a = ((qint64(time1.dwHighDateTime) << 32) | time1.dwLowDateTime);
+    qint64 b = ((qint64(time2.dwHighDateTime) << 32) | time2.dwLowDateTime);
+    return (b - a);
+}
+
+double sysMonitor::getCpuUsage()
 {
-    FILETIME idleTime;
-    FILETIME kernelTime;
-    FILETIME userTime;
-    GetSystemTimes(&idleTime, &kernelTime, &userTime);
+    static bool flag = false;
 
-    FILETIME pre_idleTime;
-    FILETIME pre_kernelTime;
-    FILETIME pre_userTime;
-
-    pre_idleTime = idleTime;
-    pre_kernelTime = kernelTime;
-    pre_userTime = userTime;
-
-    QThread::sleep(1);
+    static FILETIME idleTime;
+    static FILETIME kernelTime;
+    static FILETIME userTime;
+    static FILETIME pre_idleTime;
+    static FILETIME pre_kernelTime;
+    static FILETIME pre_userTime;
 
     GetSystemTimes(&idleTime, &kernelTime, &userTime);
+
+    if(!flag)
+    {
+        flag = true;
+        pre_idleTime = idleTime;
+        pre_kernelTime = kernelTime;
+        pre_userTime = userTime;
+        QThread::sleep(1);
+        GetSystemTimes(&idleTime, &kernelTime, &userTime);
+    }
 
     qint64 idle = CompareFileTime(pre_idleTime, idleTime);
     qint64 kernel = CompareFileTime(pre_kernelTime, kernelTime);
     qint64 user = CompareFileTime(pre_userTime, userTime);
 
     if(kernel + user == 0)
-        ui.cpuRatioTest->setText("0.0");
+        return 0.0;
 
-    double ratio = abs((kernel + user - idle) * 100 / (kernel + user));
-    ui.cpuRatioTest->setText(QString::number(ratio, 'f', 2) + '%');
+    double ratio = qAbs(double((kernel + user - idle)) * 100 / (kernel + user));
 
     pre_idleTime = idleTime;
     pre_kernelTime = kernelTime;
     pre_userTime = userTime;
+
+    return ratio;
 }
 
 void sysMonitor::ProcessInfoRefresh()
 {
-//    ui.processInfo->clearContents();
     ui.processInfo->model()->removeRows(0, ui.processInfo->rowCount());
     getProcessInfo();
 }
