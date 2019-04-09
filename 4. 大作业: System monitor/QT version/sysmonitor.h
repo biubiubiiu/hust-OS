@@ -10,9 +10,12 @@
 #include <QHostInfo>
 #include <QDebug>
 #include <QtCharts>
-QT_CHARTS_USE_NAMESPACE
+#include <QTimer>
 
+#include "chart.h"
 #include "ui_sysmonitor.h"
+
+QT_CHARTS_USE_NAMESPACE
 
 #define GBytes (1024 * 1024 * 1024)
 #define MBytes (1024 * 1024)
@@ -29,7 +32,7 @@ public:
     void getProcessInfo();
     void getSystemInfo();
     void getOtherInfo();
-    void getCpuUsage();
+    static double getCpuUsage();
 
 private:
     Ui_sysMonitor ui;
