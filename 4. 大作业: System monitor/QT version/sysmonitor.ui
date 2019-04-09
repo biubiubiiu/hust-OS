@@ -27,7 +27,7 @@
 QTabBar::tab{height:30}</string>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <property name="iconSize">
     <size>
@@ -151,7 +151,7 @@ QTabBar::tab{height:30}</string>
         <x>30</x>
         <y>20</y>
         <width>580</width>
-        <height>221</height>
+        <height>220</height>
        </rect>
       </property>
      </widget>
@@ -207,19 +207,6 @@ QTabBar::tab{height:30}</string>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QLabel" name="osNameHint">
-      <property name="geometry">
-       <rect>
-        <x>80</x>
-        <y>20</y>
-        <width>100</width>
-        <height>30</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>OS Name:</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="osTypeHint">
       <property name="geometry">
        <rect>
@@ -231,19 +218,6 @@ QTabBar::tab{height:30}</string>
       </property>
       <property name="text">
        <string>OS Type:</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="osNameLabel">
-      <property name="geometry">
-       <rect>
-        <x>230</x>
-        <y>20</y>
-        <width>200</width>
-        <height>30</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
       </property>
      </widget>
      <widget class="QLabel" name="osTypeLabel">
