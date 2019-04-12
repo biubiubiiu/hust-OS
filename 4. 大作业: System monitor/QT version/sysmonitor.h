@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <psapi.h>
 #include <lm.h>
 
 #include <QWidget>
@@ -11,9 +12,12 @@
 #include <QDebug>
 #include <QtCharts>
 #include <QTimer>
+#include <QMouseEvent>
+#include <QToolTip>
 
 #include "chart.h"
 #include "ui_sysmonitor.h"
+#include "utils.h"
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -28,17 +32,26 @@ class sysMonitor : public QWidget
 public:
     sysMonitor(QWidget *parent = nullptr);
 
+virtual ~sysMonitor();
+
 public:
     void getProcessInfo();
     void getSystemInfo();
     void getOtherInfo();
-    static double getCpuUsage();
+    void getDiskInfo();
+    double getCpuUsage();
+    double getMemoryUsage();
 
 private:
     Ui_sysMonitor ui;
+    Chart *cpuChart;
+    Chart *memChart;
+    QTimer *m_timer;
 
 private slots:
     void ProcessInfoRefresh();
+    void chartRefresh();
+    void handleCellEntered(int, int);
 };
 
 #endif // SYSMONITOR_H
