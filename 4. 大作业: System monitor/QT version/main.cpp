@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     sm.getProcessInfo();
     sm.getSystemInfo();
     sm.getOtherInfo();
-    sm.getCpuUsage();
+    sm.getDiskInfo();
 
     return a.exec();
 }
