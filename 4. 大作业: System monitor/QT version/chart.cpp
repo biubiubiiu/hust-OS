@@ -1,6 +1,6 @@
 #include "chart.h"
 #include <QtCharts/QAbstractAxis>
-#include <QtCharts/QSplineSeries>
+#include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 #include <QtCore/QRandomGenerator>
 #include <QtCore/QDebug>
@@ -10,10 +10,7 @@ Chart::Chart(QGraphicsItem *parent, Qt::WindowFlags wFlags):
     m_series(0),
     m_axis(new QValueAxis)
     {
-    QObject::connect(&m_timer, &QTimer::timeout, this, &Chart::handleTimeout);
-    m_timer.setInterval(1000);
-
-    m_series = new QSplineSeries(this);
+    m_series = new QLineSeries(this);
     QPen pen(Qt::green);
     pen.setWidth(3);
     m_series->setPen(pen);
@@ -22,11 +19,13 @@ Chart::Chart(QGraphicsItem *parent, Qt::WindowFlags wFlags):
     addSeries(m_series);
     createDefaultAxes();
     setAxisX(m_axis, m_series);
-//    m_axis->setTickCount(6);
-    axisX()->setRange(0, 60);
+    m_axis->setTickCount(6);
+    axisX()->setRange(60, 0);
     axisY()->setRange(0.0, 100.0);
 
-    m_timer.start();
+    // 以下为Chart类的自定义设置
+    setAnimationOptions(QChart::NoAnimation);   // 默认关闭动画效果
+    this->legend()->hide();     // 默认不显示图例
 }
 
 Chart::~Chart()
@@ -34,21 +33,24 @@ Chart::~Chart()
 
 }
 
-void Chart::setFunc(double (*f)(void))
+void Chart::append(double ratio)
 {
-    this->newData = f;
+    // 先判断一下数据有效性，小心驶得万年船
+    if(ratio >= 0 && ratio <= 100)
+        data << ratio;
 }
 
-void Chart::handleTimeout()
+void Chart::refresh()
 {
-    data << newData();
+    // 图表中最多容纳60个数据
     while(data.size() > 60)
         data.removeFirst();
     if(isVisible())
     {
         m_series->clear();
-        for(int i = 0;i<data.size();++i){
-            m_series->append(i, data.at(i));
+        int size = data.size();
+        for(int i = size - 1; i >= 0; --i){
+            m_series->append(60 - (size - 1 - i), data.at(i));  // 目的是为了让图像从右向左移动
         }
     }
 }
