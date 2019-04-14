@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     sm.show();
     sm.getProcessInfo();
     sm.getSystemInfo();
-    sm.getOtherInfo();
+    sm.getCpuInfo();
     sm.getDiskInfo();
 
     return a.exec();
