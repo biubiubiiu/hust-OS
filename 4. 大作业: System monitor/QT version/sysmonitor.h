@@ -37,8 +37,8 @@ virtual ~sysMonitor();
 public:
     void getProcessInfo();
     void getSystemInfo();
-    void getOtherInfo();
     void getDiskInfo();
+    void getCpuInfo();
     double getCpuUsage();
     double getMemoryUsage();
 
@@ -51,7 +51,11 @@ private:
 private slots:
     void ProcessInfoRefresh();
     void chartRefresh();
+    void uptimeRefresh();
+    void refresh();
     void handleCellEntered(int, int);
+    void searchProcess(const QString &);
+    void killProcess();
 };
 
 #endif // SYSMONITOR_H
