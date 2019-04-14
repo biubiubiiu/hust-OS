@@ -3,29 +3,34 @@
 
 sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     ui.setupUi(this);
-//    ui.processInfo->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
+    // 初始化 ‘cpu’页 的cpu使用率图表
     cpuChart = new Chart;
     ui.cpuUsageChart->setChart(cpuChart);
     ui.cpuUsageChart->setRenderHint(QPainter::Antialiasing);
 
+    // 初始化 ‘内存’ 页的内存使用率图表
     memChart = new Chart;
     ui.memoryUsageChart->setChart(memChart);
     ui.memoryUsageChart->setRenderHint(QPainter::Antialiasing);
 
+    // 启动计时器，每隔1000ms更新一次信息
     m_timer = new QTimer(this);
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(chartRefresh()));
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(ProcessInfoRefresh()));
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(refresh()));
     m_timer->setInterval(1000);
     m_timer->start();
 
+    // 设置 ‘进程’ 页中每一列的宽度
+    // 开启了 horizonalHeaderStretchLastSection， 不必设置最后一列的宽度
     ui.processInfo->setColumnWidth(0, 65);
     ui.processInfo->setColumnWidth(1, 250);
-    ui.processInfo->setColumnWidth(2, 100);
-    ui.processInfo->setColumnWidth(3, 100);
-    ui.processInfo->setColumnWidth(4, 100);
+    ui.processInfo->setColumnWidth(2, 90);
+    ui.processInfo->setColumnWidth(3, 90);
+    ui.processInfo->setColumnWidth(4, 90);
 
     connect(ui.processInfo, SIGNAL(cellEntered(int, int)), this, SLOT(handleCellEntered(int, int)));
+    connect(ui.searchLineEdit, SIGNAL(textChanged(QString)), this, SLOT(searchProcess(const QString&)));
+    connect(ui.killProcessBtn, SIGNAL(clicked()), this, SLOT(killProcess()));
 }
 
 sysMonitor::~sysMonitor()
@@ -33,53 +38,105 @@ sysMonitor::~sysMonitor()
 
 }
 
+/* 获取 ‘进程’ 页内容 */
 void sysMonitor::getProcessInfo() {
-    // 获取进程信息
-    PROCESSENTRY32 currentProcess;
-    currentProcess.dwSize = sizeof(currentProcess);
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(pe32);
+    HANDLE hProcessSnap;
+    HANDLE hProcess;
+    DWORD dwPriorityClass;
 
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
+    // 获得进程快照
+    hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) {
         return;
     }
 
     int counter;
 
-    BOOL bMore = Process32First(hSnapshot, &currentProcess);
-    while (bMore) {
-        DWORD pid = currentProcess.th32ProcessID;
-        DWORD ppid = currentProcess.th32ParentProcessID;
+    if(!Process32First(hProcessSnap, &pe32))
+    {
+        CloseHandle(hProcessSnap);
+        return;
+    }
+
+    do {
+        DWORD pid = pe32.th32ProcessID;
+        DWORD ppid = pe32.th32ParentProcessID;
         QString exeName =
             (QString::fromUtf16(reinterpret_cast<const unsigned short *>(
-                currentProcess.szExeFile)));
-        DWORD threads = currentProcess.cntThreads;
+                pe32.szExeFile)));
+        DWORD threads = pe32.cntThreads;
 
-        HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION |
-                                        PROCESS_VM_READ,
+        // 获取进程占用内存
+        hProcess = OpenProcess(PROCESS_ALL_ACCESS,
                                         FALSE, pid);
         PROCESS_MEMORY_COUNTERS pmc;
         pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
-        GetProcessMemoryInfo(hProc, &pmc, sizeof(pmc));
+        GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
 
+        // 获取进程优先级
+        dwPriorityClass = GetPriorityClass(hProcess);
+        QString priority;
+        switch(dwPriorityClass)
+        {
+        case ABOVE_NORMAL_PRIORITY_CLASS:
+            priority = "above normal";
+            break;
+        case BELOW_NORMAL_PRIORITY_CLASS:
+            priority = "below normal";
+            break;
+        case HIGH_PRIORITY_CLASS:
+            priority = "high";
+            break;
+        case IDLE_PRIORITY_CLASS:
+            priority = "idle";
+            break;
+        case NORMAL_PRIORITY_CLASS:
+            priority = "normal";
+            break;
+        case REALTIME_PRIORITY_CLASS:
+            priority = "realtime";
+            break;
+        default:
+            priority = QString::number(dwPriorityClass);
+            break;
+        }
+
+        // 进程名和优先级部分可能会出现文本过长问题
+        // 这里获取处理后的字符串
         QString elidedName = getElidedText(ui.processInfo->font(), exeName, ui.processInfo->columnWidth(1));
+        QString elidedPriority = getElidedText(ui.processInfo->font(), priority, ui.processInfo->columnWidth(5));
         counter = ui.processInfo->rowCount();
         ui.processInfo->insertRow(counter);
         ui.processInfo->setItem(counter, 0, new QTableWidgetItem(QString::number((pid))));
         ui.processInfo->setItem(counter, 1, new QTableWidgetItem(elidedName));
-        ui.processInfo->item(counter, 1)->setToolTip(exeName);
         ui.processInfo->setItem(counter, 2, new QTableWidgetItem(QString::number(ppid)));
         ui.processInfo->setItem(counter, 3, new QTableWidgetItem(QString::number(threads)));
         ui.processInfo->setItem(counter, 4, new QTableWidgetItem(QString::number(pmc.WorkingSetSize / KBytes) + "K"));
+        ui.processInfo->setItem(counter, 5, new QTableWidgetItem(priority));
 
-        bMore = Process32Next(hSnapshot, &currentProcess);
-        CloseHandle(hProc);
-    }
+        // 如果出现文本过长，设置tooltip提示
+        if(elidedName != exeName)
+            ui.processInfo->item(counter, 1)->setToolTip(exeName);
+        else
+            ui.processInfo->item(counter, 1)->setToolTip("");
+        if(elidedPriority != priority)
+            ui.processInfo->item(counter, 5)->setToolTip(priority);
+        else
+            ui.processInfo->item(counter, 5)->setToolTip("");
 
-    CloseHandle(hSnapshot);
+        CloseHandle(hProcess);
+
+    } while(Process32Next(hProcessSnap, &pe32));
+
+    CloseHandle(hProcessSnap);
 }
 
+/* 获取 ‘系统’ 页中相关信息 */
 void sysMonitor::getSystemInfo()
 {
+    // 判断操作系统位数
     SYSTEM_INFO sysInfo;
     GetNativeSystemInfo(&sysInfo);
     if(sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
@@ -90,33 +147,52 @@ void sysMonitor::getSystemInfo()
         ui.osTypeLabel->setText("32-bit");
     }
 
-    DWORD processorCoreNum = sysInfo.dwNumberOfProcessors;
-    ui.coreNumLabel->setText(QString::number(processorCoreNum));
-}
+    // 获取设备运行时间
+    DWORD ticks = GetTickCount();
+    ui.uptimeLabel->setText(transformTime(ticks));
 
-void sysMonitor::getOtherInfo()
-{
     // 获取计算机名称
     ui.localHostNameLabel->setText(QHostInfo::localHostName());
-
-    // 获取CPU型号
-    QSettings *CPU = new QSettings("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",QSettings::NativeFormat);
-    QString m_cpuDescribe = CPU->value("ProcessorNameString").toString();
-    delete CPU;
-    ui.cpuInfoLabel->setText(m_cpuDescribe);
 
     // 获取操作系统版本
     ui.osInfoLabel->setText(QSysInfo::prettyProductName());
 }
 
+/* 获取 ‘cpu’ 页中相关信息 */
+void sysMonitor::getCpuInfo()
+{
+    // 获取cpu型号
+    // 实质是读取注册表内容
+    QSettings *CPU = new QSettings("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",QSettings::NativeFormat);
+    QString m_cpuDescribe = CPU->value("ProcessorNameString").toString();
+    delete CPU;
+    ui.cpuInfoLabel->setText(m_cpuDescribe);
+
+    // 获取核数
+    SYSTEM_INFO sysInfo;
+    GetNativeSystemInfo(&sysInfo);
+    DWORD processorCoreNum = sysInfo.dwNumberOfProcessors;
+    ui.coreNumLabel->setText(QString::number(processorCoreNum));
+}
+
+/*
+ * 功能：计算两个 filetime 的差值
+ */
 qint64 CompareFileTime(const FILETIME &time1, const FILETIME &time2) {
+    // 先将 filetime 转换为64位整数
     qint64 a = ((qint64(time1.dwHighDateTime) << 32) | time1.dwLowDateTime);
     qint64 b = ((qint64(time2.dwHighDateTime) << 32) | time2.dwLowDateTime);
     return (b - a);
 }
 
+/*
+ * 返回当前的cpu使用率
+ * 返回值主要用来绘制cpu使用率图表
+ * cpu使用率计算方法： ratio = (kernel + user - idle) / (kernel + user)
+ */
 double sysMonitor::getCpuUsage()
 {
+    // 记录是否是第一次获取数据
     static bool flag = false;
 
     static FILETIME idleTime;
@@ -154,7 +230,10 @@ double sysMonitor::getCpuUsage()
     return ratio;
 }
 
-
+/*
+ * 返回当前内存使用率
+ * 返回值主要用来绘制内存使用率图表
+ */
 double sysMonitor::getMemoryUsage()
 {
     // 获取内存信息
@@ -165,13 +244,15 @@ double sysMonitor::getMemoryUsage()
     double m_freeMem = statex.ullAvailPhys * 1.0 / GBytes;
     double memUsage = 100 * (1 - (statex.ullAvailPhys * 1.0 / statex.ullTotalPhys));
 
+    // 顺便把 label 也改了
     ui.memoryUsageLabel->setText(QString::number(memUsage, 'f', 2) + "%\t\t"
-                                + QString::number(m_freeMem, 'f', 2) + "GB available / "
-                                + QString::number(m_totalMem, 'f', 2) + "GB total");
+                                + QString::number(m_freeMem, 'f', 2) + " GB available / "
+                                + QString::number(m_totalMem, 'f', 2) + " GB total");
 
     return memUsage;
 }
 
+/* 读取硬盘信息 */
 void sysMonitor::getDiskInfo()
 {
     QString diskDescription = "";
@@ -185,23 +266,44 @@ void sysMonitor::getDiskInfo()
         if(GetDiskFreeSpaceEx(lpcwstrDriver, &liFreeBytesAvilale, &liTotalBytes, &liTotalFreeBytes))
         {
             QString free = QString::number(1.0 * liTotalFreeBytes.QuadPart / GBytes, 'f', 1);
-            free.append('G');
+            free += 'G';
             QString all = QString::number(1.0 * liTotalBytes.QuadPart / GBytes, 'f', 1);
-            all.append('G');
+            all += 'G';
+            QString usage = QString::number(100.0 * liTotalFreeBytes.QuadPart / liTotalBytes.QuadPart, 'f', 2);
+            usage += '%';
 
-            QString str = QString("%1 %2/%3     ").arg(dirName, free, all);
+            QString str = QString("%1\t%2 / %3\t\t\t%4 used\n\n").arg(dirName, free, all, usage);
             diskDescription += str;
         }
     }
     ui.diskInfoLabel->setText(diskDescription);
 }
 
+/* 刷新 ‘进程’ 页内容 */
 void sysMonitor::ProcessInfoRefresh()
 {
+    bool flag = false;
+    int selectedRow = 0;
+    // 记录原来的滚动条位置
+    int currentValue = ui.processInfo->verticalScrollBar()->value();
+    // 判断当前有没有选择某一行
+    if(!ui.processInfo->selectedItems().empty())
+    {
+        // 如果有，记录选择的行数
+        selectedRow = ui.processInfo->selectedItems().first()->row();
+        flag = true;
+    }
     ui.processInfo->model()->removeRows(0, ui.processInfo->rowCount());
     getProcessInfo();
+    // 刷新内容后，原来的选择信息会丢失，这里重新设置回原来的选择
+    if(flag)
+        ui.processInfo->selectRow(selectedRow);
+    // 执行selectRow后，会自动滚动到所选行附近
+    // 通过恢复滚动条位置，解决上述问题
+    ui.processInfo->verticalScrollBar()->setValue(currentValue);
 }
 
+/* 刷新图表 */
 void sysMonitor::chartRefresh()
 {
     double cpuUsage = getCpuUsage();
@@ -215,13 +317,68 @@ void sysMonitor::chartRefresh()
     memChart->refresh();
 }
 
+/* 刷新系统运行时间 */
+void sysMonitor::uptimeRefresh()
+{
+    DWORD ticks = GetTickCount();
+    ui.uptimeLabel->setText(transformTime(ticks));
+}
+
+void sysMonitor::refresh()
+{
+    ProcessInfoRefresh();
+    chartRefresh();
+    uptimeRefresh();
+}
+
+/*
+ * 功能：对于 ‘进程’ 页中过长的信息，实现鼠标悬停显示完整内容
+ * 参数：鼠标所在单元的行和列
+ */
 void sysMonitor::handleCellEntered(int row, int column)
 {
+    if(column != 1 && column != 5)
+        return;
     QTableWidgetItem *item = ui.processInfo->item(row, column);
     if(item == nullptr)
         return;
-    if (column == 1)
+    if (item->toolTip() != "")
         QToolTip::showText(QCursor::pos(), item->toolTip());
+}
+
+/*
+ * 功能：实现 ‘进程’ 页中的搜索功能，搜索方式为全匹配搜索
+ * 参数：
+ * -key：搜索关键字
+ */
+void sysMonitor::searchProcess(const QString &key)
+{
+    if(key == "")
+        ui.processInfo->clearSelection();
+    QList<QTableWidgetItem *> items = ui.processInfo->findItems(key, Qt::MatchContains);
+    if(!items.empty())
+    {
+        int first = items.first()->row();
+        ui.processInfo->selectRow(first);
+    }
     else
-        QToolTip::showText(QCursor::pos(), item->text());
+        ui.processInfo->clearSelection();
+}
+
+/*
+ * 功能：终止 ‘进程’页中选择的进程
+ */
+void sysMonitor::killProcess()
+{
+    QList<QTableWidgetItem *> items = ui.processInfo->selectedItems();
+    if(items.empty())
+        return;
+    int row = items.first()->row();
+    DWORD pid = ui.processInfo->item(row, 0)->text().toULong();
+    HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+    if(hProc == NULL)
+        return;
+    if(TerminateProcess(hProc, 0) == TRUE)
+        ProcessInfoRefresh();
+    CloseHandle(hProc);
 }
