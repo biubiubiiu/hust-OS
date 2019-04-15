@@ -2,6 +2,7 @@
 #include "sysmonitor.h"
 
 sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
+    setWindowFlags(windowFlags()&~Qt::WindowMaximizeButtonHint);
     ui.setupUi(this);
 
     // 初始化 ‘cpu’页 的cpu使用率图表
@@ -29,8 +30,11 @@ sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     ui.processInfo->setColumnWidth(4, 90);
 
     connect(ui.processInfo, SIGNAL(cellEntered(int, int)), this, SLOT(handleCellEntered(int, int)));
+    connect(ui.processInfo, SIGNAL(itemSelectionChanged()), this, SLOT(handleSelectionChanged()));
     connect(ui.searchLineEdit, SIGNAL(textChanged(QString)), this, SLOT(searchProcess(const QString&)));
     connect(ui.killProcessBtn, SIGNAL(clicked()), this, SLOT(killProcess()));
+
+    ui.killProcessBtn->setEnabled(false);
 }
 
 sysMonitor::~sysMonitor()
@@ -44,7 +48,10 @@ void sysMonitor::getProcessInfo() {
     pe32.dwSize = sizeof(pe32);
     HANDLE hProcessSnap;
     HANDLE hProcess;
-    DWORD dwPriorityClass;
+    HANDLE hToken;
+    DWORD dwSize = 0;
+
+    QString priority;
 
     // 获得进程快照
     hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -67,41 +74,82 @@ void sysMonitor::getProcessInfo() {
             (QString::fromUtf16(reinterpret_cast<const unsigned short *>(
                 pe32.szExeFile)));
         DWORD threads = pe32.cntThreads;
+        priority = QString::number(pe32.pcPriClassBase);
+        DWORD workingSetSize;
+//        DWORD dwPriorityClass;
 
         // 获取进程占用内存
         hProcess = OpenProcess(PROCESS_ALL_ACCESS,
-                                        FALSE, pid);
-        PROCESS_MEMORY_COUNTERS pmc;
-        pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
-        GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
-
-        // 获取进程优先级
-        dwPriorityClass = GetPriorityClass(hProcess);
-        QString priority;
-        switch(dwPriorityClass)
+                               FALSE, pid);
+        if(hProcess == NULL)
         {
-        case ABOVE_NORMAL_PRIORITY_CLASS:
-            priority = "above normal";
-            break;
-        case BELOW_NORMAL_PRIORITY_CLASS:
-            priority = "below normal";
-            break;
-        case HIGH_PRIORITY_CLASS:
-            priority = "high";
-            break;
-        case IDLE_PRIORITY_CLASS:
-            priority = "idle";
-            break;
-        case NORMAL_PRIORITY_CLASS:
-            priority = "normal";
-            break;
-        case REALTIME_PRIORITY_CLASS:
-            priority = "realtime";
-            break;
-        default:
-            priority = QString::number(dwPriorityClass);
-            break;
+            workingSetSize = 0;
         }
+        else
+        {
+            PROCESS_MEMORY_COUNTERS pmc;
+            pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
+            GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
+            workingSetSize = pmc.WorkingSetSize;
+
+            // 获取进程用户名
+//            if(OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == TRUE)
+//            {
+//                if(GetTokenInformation(hToken, TokenUser, NULL, 0, &dwSize) == TRUE)
+//                {
+//                    PTOKEN_USER pTokenUser = (PTOKEN_USER)new BYTE[dwSize];
+//                    if(GetTokenInformation(hToken, TokenUser, pTokenUser, dwSize, &dwSize) == TRUE)
+//                    {
+//                        BOOL bLookupSid;
+//                        SID_NAME_USE snu;
+//                        TCHAR szUserName[1024];
+//                        int nLen = sizeof(szUserName) / sizeof(TCHAR);
+//                        DWORD dwUserSize = sizeof(szUserName) / sizeof(TCHAR);
+//                        TCHAR szDomain[1024];
+//                        DWORD cbDomain = sizeof(szDomain) / sizeof(TCHAR);
+//                        bLookupSid = LookupAccountSid(NULL, pTokenUser->User.Sid,
+//                                                      szUserName, &dwUserSize,
+//                                                      szDomain, &cbDomain, &snu);
+//                        if(bLookupSid)
+//                            processUsername = QString::fromUtf16(reinterpret_cast<const unsigned short *>(szUserName));
+//                        else
+//                            processUsername = "lookupsid error";
+//                    }
+//                }
+//                else
+//                    processUsername = (GetLastError() == ERROR_INSUFFICIENT_BUFFER?"shit":"");
+//            }
+//            else
+//                processUsername = "open process token error";
+
+
+        }
+        // 获取进程优先级
+//        dwPriorityClass = GetPriorityClass(hProcess);
+//        switch(dwPriorityClass)
+//        {
+//        case ABOVE_NORMAL_PRIORITY_CLASS:
+//            priority = "above normal";
+//            break;
+//        case BELOW_NORMAL_PRIORITY_CLASS:
+//            priority = "below normal";
+//            break;
+//        case HIGH_PRIORITY_CLASS:
+//            priority = "high";
+//            break;
+//        case IDLE_PRIORITY_CLASS:
+//            priority = "idle";
+//            break;
+//        case NORMAL_PRIORITY_CLASS:
+//            priority = "normal";
+//            break;
+//        case REALTIME_PRIORITY_CLASS:
+//            priority = "realtime";
+//            break;
+//        case 0:
+//            priority = "unknown";
+//            break;
+//        }
 
         // 进程名和优先级部分可能会出现文本过长问题
         // 这里获取处理后的字符串
@@ -113,8 +161,8 @@ void sysMonitor::getProcessInfo() {
         ui.processInfo->setItem(counter, 1, new QTableWidgetItem(elidedName));
         ui.processInfo->setItem(counter, 2, new QTableWidgetItem(QString::number(ppid)));
         ui.processInfo->setItem(counter, 3, new QTableWidgetItem(QString::number(threads)));
-        ui.processInfo->setItem(counter, 4, new QTableWidgetItem(QString::number(pmc.WorkingSetSize / KBytes) + "K"));
-        ui.processInfo->setItem(counter, 5, new QTableWidgetItem(priority));
+        ui.processInfo->setItem(counter, 4, new QTableWidgetItem(QString::number(workingSetSize * 1.0 / MBytes, 'f', 1) + "MB"));
+        ui.processInfo->setItem(counter, 5, new QTableWidgetItem(elidedPriority));
 
         // 如果出现文本过长，设置tooltip提示
         if(elidedName != exeName)
@@ -125,6 +173,10 @@ void sysMonitor::getProcessInfo() {
             ui.processInfo->item(counter, 5)->setToolTip(priority);
         else
             ui.processInfo->item(counter, 5)->setToolTip("");
+
+        ui.processInfo->item(counter, 2)->setTextAlignment(Qt::AlignCenter);
+        ui.processInfo->item(counter, 3)->setTextAlignment(Qt::AlignCenter);
+        ui.processInfo->item(counter, 4)->setTextAlignment(Qt::AlignCenter);
 
         CloseHandle(hProcess);
 
@@ -245,9 +297,10 @@ double sysMonitor::getMemoryUsage()
     double memUsage = 100 * (1 - (statex.ullAvailPhys * 1.0 / statex.ullTotalPhys));
 
     // 顺便把 label 也改了
-    ui.memoryUsageLabel->setText(QString::number(memUsage, 'f', 2) + "%\t\t"
-                                + QString::number(m_freeMem, 'f', 2) + " GB available / "
-                                + QString::number(m_totalMem, 'f', 2) + " GB total");
+    ui.totalMemoryLabel->setText(QString::number(m_totalMem, 'f', 1) + "  GB");
+    ui.inUseMemoryLabel->setText(QString::number(m_totalMem - m_freeMem, 'f', 1) + " GB");
+    ui.availableMemoryLabel->setText(QString::number(m_freeMem, 'f', 1) + " GB");
+    ui.memoryUsageLabel->setText(QString::number(memUsage, 'f', 2) + "%");
 
     return memUsage;
 }
@@ -346,6 +399,15 @@ void sysMonitor::handleCellEntered(int row, int column)
         QToolTip::showText(QCursor::pos(), item->toolTip());
 }
 
+void sysMonitor::handleSelectionChanged()
+{
+    QList<QTableWidgetItem *> items = ui.processInfo->selectedItems();
+    if(items.empty())
+        ui.killProcessBtn->setEnabled(false);
+    else
+        ui.killProcessBtn->setEnabled(true);
+}
+
 /*
  * 功能：实现 ‘进程’ 页中的搜索功能，搜索方式为全匹配搜索
  * 参数：
@@ -379,6 +441,9 @@ void sysMonitor::killProcess()
     if(hProc == NULL)
         return;
     if(TerminateProcess(hProc, 0) == TRUE)
+    {
         ProcessInfoRefresh();
+        ui.processInfo->clearSelection();
+    }
     CloseHandle(hProc);
 }
