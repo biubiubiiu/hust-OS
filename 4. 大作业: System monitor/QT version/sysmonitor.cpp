@@ -2,7 +2,8 @@
 #include "sysmonitor.h"
 
 sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
-    setWindowFlags(windowFlags()&~Qt::WindowMaximizeButtonHint);
+    setWindowFlags(windowFlags()&~Qt::WindowMaximizeButtonHint);    // 去掉最大化按钮
+    setFixedSize(720, 576);     // 设置窗口大小不可改变
     ui.setupUi(this);
 
     // 初始化 ‘cpu’页 的cpu使用率图表
@@ -33,6 +34,7 @@ sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     connect(ui.processInfo, SIGNAL(itemSelectionChanged()), this, SLOT(handleSelectionChanged()));
     connect(ui.searchLineEdit, SIGNAL(textChanged(QString)), this, SLOT(searchProcess(const QString&)));
     connect(ui.killProcessBtn, SIGNAL(clicked()), this, SLOT(killProcess()));
+    connect(ui.diskRefreshBtn, SIGNAL(clicked()), this, SLOT(diskInfoRefresh()));
 
     ui.killProcessBtn->setEnabled(false);
 }
@@ -48,8 +50,6 @@ void sysMonitor::getProcessInfo() {
     pe32.dwSize = sizeof(pe32);
     HANDLE hProcessSnap;
     HANDLE hProcess;
-    HANDLE hToken;
-    DWORD dwSize = 0;
 
     QString priority;
 
@@ -76,23 +76,33 @@ void sysMonitor::getProcessInfo() {
         DWORD threads = pe32.cntThreads;
         priority = QString::number(pe32.pcPriClassBase);
         DWORD workingSetSize;
-//        DWORD dwPriorityClass;
 
-        // 获取进程占用内存
+        // 尝试获取进程句柄
+        // warning: 由于Windows对访问权限的（严重）控制
+        // 会由于权限不足导致无法返回进程句柄
+        // 获取进程内存，用户名等操作无法完成
+        // 没有解决办法
         hProcess = OpenProcess(PROCESS_ALL_ACCESS,
                                FALSE, pid);
+
+
+        // 当访问权限不足时，返回hProcess为NULL
         if(hProcess == NULL)
         {
+            // 设置进程占用内存为0，表示无法获取
             workingSetSize = 0;
         }
         else
         {
+            // 获取进程占用内存
             PROCESS_MEMORY_COUNTERS pmc;
             pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS);
             GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
             workingSetSize = pmc.WorkingSetSize;
 
             // 获取进程用户名
+//            HANDLE hToken;
+//            DWORD dwSize = 0;
 //            if(OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == TRUE)
 //            {
 //                if(GetTokenInformation(hToken, TokenUser, NULL, 0, &dwSize) == TRUE)
@@ -177,6 +187,7 @@ void sysMonitor::getProcessInfo() {
         ui.processInfo->item(counter, 2)->setTextAlignment(Qt::AlignCenter);
         ui.processInfo->item(counter, 3)->setTextAlignment(Qt::AlignCenter);
         ui.processInfo->item(counter, 4)->setTextAlignment(Qt::AlignCenter);
+        ui.processInfo->item(counter, 5)->setTextAlignment(Qt::AlignCenter);
 
         CloseHandle(hProcess);
 
@@ -309,7 +320,9 @@ double sysMonitor::getMemoryUsage()
 void sysMonitor::getDiskInfo()
 {
     QString diskDescription = "";
+    // 获取所有盘符
     QFileInfoList list = QDir::drives();
+    // 遍历盘符列表
     foreach(QFileInfo dir, list)
     {
         QString dirName = dir.absolutePath();
@@ -356,6 +369,12 @@ void sysMonitor::ProcessInfoRefresh()
     ui.processInfo->verticalScrollBar()->setValue(currentValue);
 }
 
+/* 刷新硬盘信息 */
+void sysMonitor::diskInfoRefresh()
+{
+    getDiskInfo();
+}
+
 /* 刷新图表 */
 void sysMonitor::chartRefresh()
 {
@@ -386,7 +405,9 @@ void sysMonitor::refresh()
 
 /*
  * 功能：对于 ‘进程’ 页中过长的信息，实现鼠标悬停显示完整内容
- * 参数：鼠标所在单元的行和列
+ * 参数：
+ * -row:鼠标所在单元的行
+ * -column:鼠标所在单元的列
  */
 void sysMonitor::handleCellEntered(int row, int column)
 {
@@ -399,6 +420,10 @@ void sysMonitor::handleCellEntered(int row, int column)
         QToolTip::showText(QCursor::pos(), item->toolTip());
 }
 
+/*
+ * 当 ‘进程’ 页选择发生改变时触发
+ * 功能： 当选择为空时，设置 KillProcess 按钮为不可选中状态
+ */
 void sysMonitor::handleSelectionChanged()
 {
     QList<QTableWidgetItem *> items = ui.processInfo->selectedItems();
