@@ -41,7 +41,7 @@
 QTabBar::tab{height:30}</string>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>3</number>
    </property>
    <property name="iconSize">
     <size>
@@ -158,7 +158,7 @@ QScrollBar::addline {
      </column>
      <column>
       <property name="text">
-       <string>Priority</string>
+       <string>Priority(base)</string>
       </property>
      </column>
      <column>
@@ -688,7 +688,7 @@ QScrollBar::addline {
    </widget>
    <widget class="QWidget" name="tab_4">
     <attribute name="title">
-     <string>System</string>
+     <string>Other</string>
     </attribute>
     <widget class="QGroupBox" name="formGroupBox">
      <property name="geometry">
@@ -897,11 +897,100 @@ QScrollBar::addline {
       </property>
      </widget>
     </widget>
+    <widget class="QPushButton" name="diskRefreshBtn">
+     <property name="geometry">
+      <rect>
+       <x>610</x>
+       <y>490</y>
+       <width>95</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Bahnschrift Light</family>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Refresh</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_5">
     <attribute name="title">
      <string>About</string>
     </attribute>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>20</y>
+       <width>381</width>
+       <height>411</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="resource.qrc">:/img/author.JPG</pixmap>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>90</y>
+       <width>251</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Bahnschrift Light</family>
+      </font>
+     </property>
+     <property name="text">
+      <string>Author:  Raymond Wong</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>150</y>
+       <width>241</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Bahnschrift Light</family>
+      </font>
+     </property>
+     <property name="text">
+      <string>Class:  1702</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_9">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>210</y>
+       <width>241</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Bahnschrift Light</family>
+      </font>
+     </property>
+     <property name="text">
+      <string>Id:  U201716998</string>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>
@@ -913,6 +1002,8 @@ QScrollBar::addline {
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>
