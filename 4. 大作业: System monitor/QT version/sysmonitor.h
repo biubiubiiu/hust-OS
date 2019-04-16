@@ -50,10 +50,12 @@ private:
 
 private slots:
     void ProcessInfoRefresh();
+    void diskInfoRefresh();
     void chartRefresh();
     void uptimeRefresh();
     void refresh();
     void handleCellEntered(int, int);
+    void handleSelectionChanged();
     void searchProcess(const QString &);
     void killProcess();
 };
