@@ -28,6 +28,10 @@ Chart::Chart(QGraphicsItem *parent, Qt::WindowFlags wFlags):
     // 以下为Chart类的自定义设置
     setAnimationOptions(QChart::NoAnimation);   // 默认关闭动画效果
     this->legend()->hide();     // 默认不显示图例
+    this->setMargins(QMargins(0, 0, 0, 0));
+    this->setBackgroundRoundness(0);
+    this->setPos(0, 0);
+
 }
 
 Chart::~Chart()
