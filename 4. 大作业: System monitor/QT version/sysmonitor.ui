@@ -36,12 +36,50 @@
      <family>Bahnschrift Light</family>
     </font>
    </property>
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
    <property name="styleSheet">
-    <string notr="true">QTabBar::tab{width:90}
-QTabBar::tab{height:30}</string>
+    <string notr="true">QTabWidget::pane
+{
+	top:3px;
+	border:none;
+	bottom:3px;
+}
+QTabBar::tab
+{
+	color:#333333;
+	background:transparent;	
+	padding-left:9px;
+	padding-right:9px;
+	width:75px;
+	height:30px;
+	margin-left:0px;
+	margin-right:0px;
+} 
+
+QTabBar::tab:selected
+{
+	color:#618BE5;
+	background:transparent;	
+	border-bottom:2px solid #618BE5;
+}
+
+QTabBar::tab:hover
+{
+	color:#618BE5;
+	background:transparent;	
+}
+
+QTabWidget::tab-bar {
+    alignment: left;  
+	left:20px;	
+} 
+
+</string>
    </property>
    <property name="currentIndex">
-    <number>3</number>
+    <number>0</number>
    </property>
    <property name="iconSize">
     <size>
@@ -119,6 +157,9 @@ QScrollBar::addline {
      <property name="gridStyle">
       <enum>Qt::SolidLine</enum>
      </property>
+     <property name="sortingEnabled">
+      <bool>false</bool>
+     </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
      </attribute>
@@ -158,7 +199,7 @@ QScrollBar::addline {
      </column>
      <column>
       <property name="text">
-       <string>Priority(base)</string>
+       <string>Priority</string>
       </property>
      </column>
      <column>
@@ -213,9 +254,9 @@ QScrollBar::addline {
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
+       <y>5</y>
        <width>700</width>
-       <height>550</height>
+       <height>530</height>
       </rect>
      </property>
      <property name="font">
@@ -279,7 +320,7 @@ QScrollBar::addline {
      <widget class="QLabel" name="label_22">
       <property name="geometry">
        <rect>
-        <x>665</x>
+        <x>655</x>
         <y>285</y>
         <width>16</width>
         <height>16</height>
@@ -473,9 +514,9 @@ QScrollBar::addline {
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
+       <y>5</y>
        <width>700</width>
-       <height>450</height>
+       <height>530</height>
       </rect>
      </property>
      <property name="font">
@@ -521,7 +562,7 @@ QScrollBar::addline {
        <rect>
         <x>150</x>
         <y>320</y>
-        <width>500</width>
+        <width>420</width>
         <height>20</height>
        </rect>
       </property>
@@ -537,7 +578,7 @@ QScrollBar::addline {
      <widget class="QLabel" name="label_32">
       <property name="geometry">
        <rect>
-        <x>665</x>
+        <x>655</x>
         <y>285</y>
         <width>16</width>
         <height>16</height>
@@ -634,7 +675,7 @@ QScrollBar::addline {
        <rect>
         <x>150</x>
         <y>360</y>
-        <width>500</width>
+        <width>420</width>
         <height>20</height>
        </rect>
       </property>
@@ -671,7 +712,81 @@ QScrollBar::addline {
        <rect>
         <x>150</x>
         <y>400</y>
-        <width>500</width>
+        <width>420</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Bahnschrift Light</family>
+       </font>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_36">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>440</y>
+        <width>150</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Bahnschrift Light</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Total virtual memory:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_37">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>480</y>
+        <width>150</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Bahnschrift Light</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Available virtual memory:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="totalVirtualMemoryLabel">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>440</y>
+        <width>420</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Bahnschrift Light</family>
+       </font>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="availableVirtualMemoryLabel">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>480</y>
+        <width>420</width>
         <height>20</height>
        </rect>
       </property>
@@ -694,7 +809,7 @@ QScrollBar::addline {
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
+       <y>5</y>
        <width>700</width>
        <height>250</height>
       </rect>
@@ -845,9 +960,9 @@ QScrollBar::addline {
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>270</y>
+       <y>265</y>
        <width>700</width>
-       <height>200</height>
+       <height>225</height>
       </rect>
      </property>
      <property name="font">
@@ -884,7 +999,7 @@ QScrollBar::addline {
         <x>15</x>
         <y>70</y>
         <width>671</width>
-        <height>120</height>
+        <height>140</height>
        </rect>
       </property>
       <property name="font">
@@ -900,9 +1015,9 @@ QScrollBar::addline {
     <widget class="QPushButton" name="diskRefreshBtn">
      <property name="geometry">
       <rect>
-       <x>610</x>
-       <y>490</y>
-       <width>95</width>
+       <x>620</x>
+       <y>505</y>
+       <width>90</width>
        <height>30</height>
       </rect>
      </property>
@@ -970,7 +1085,7 @@ QScrollBar::addline {
       </font>
      </property>
      <property name="text">
-      <string>Class:  1702</string>
+      <string>Class:    1702</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_9">
@@ -988,7 +1103,7 @@ QScrollBar::addline {
       </font>
      </property>
      <property name="text">
-      <string>Id:  U201716998</string>
+      <string>Id:            U201716998</string>
      </property>
     </widget>
    </widget>
