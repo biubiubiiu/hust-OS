@@ -11,21 +11,18 @@ QT_CHARTS_END_NAMESPACE
 
 QT_CHARTS_USE_NAMESPACE
 
-class Chart: public QChart
+class Chart : public QChart
 {
     Q_OBJECT
 public:
     Chart(QGraphicsItem *parent = 0, Qt::WindowFlags wFlags = 0);
     void refresh();
     void append(double ratio);
-virtual ~Chart();
+    virtual ~Chart();
 
 private:
     QTimer m_timer;
     QLineSeries *m_series;
-    QStringList m_titles;
-//    QValueAxis *m_axisX;
-//    QValueAxis *m_axisY;
     QValueAxis *m_axis;
     QList<double> data;
 };

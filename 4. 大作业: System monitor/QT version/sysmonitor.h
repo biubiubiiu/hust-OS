@@ -32,7 +32,7 @@ class sysMonitor : public QWidget
 public:
     sysMonitor(QWidget *parent = nullptr);
 
-virtual ~sysMonitor();
+    virtual ~sysMonitor();
 
 public:
     void getProcessInfo();

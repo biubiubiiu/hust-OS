@@ -1,10 +1,14 @@
 #include <QtGui>
 #include "sysmonitor.h"
 
-sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
-    setWindowFlags(windowFlags()&~Qt::WindowMaximizeButtonHint);    // 去掉最大化按钮
-    setFixedSize(720, 576);     // 设置窗口大小不可改变
+sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent)
+{
+    setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint); // 去掉最大化按钮
+    setFixedSize(720, 576);                                        // 设置窗口大小不可改变
     ui.setupUi(this);
+
+    // 设置启动时默认展示页
+    ui.selectTab->setCurrentIndex(0);
 
     // 初始化 ‘cpu’页 的cpu使用率图表
     cpuChart = new Chart;
@@ -30,9 +34,14 @@ sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
     ui.processInfo->setColumnWidth(3, 90);
     ui.processInfo->setColumnWidth(4, 90);
 
+    // 为 ‘进程’ 页搜索框添加图标
+    QAction *searchAction = new QAction(ui.searchLineEdit);
+    searchAction->setIcon(QIcon(":/img/search.png"));
+    ui.searchLineEdit->addAction(searchAction, QLineEdit::TrailingPosition);
+
     connect(ui.processInfo, SIGNAL(cellEntered(int, int)), this, SLOT(handleCellEntered(int, int)));
     connect(ui.processInfo, SIGNAL(itemSelectionChanged()), this, SLOT(handleSelectionChanged()));
-    connect(ui.searchLineEdit, SIGNAL(textChanged(QString)), this, SLOT(searchProcess(const QString&)));
+    connect(ui.searchLineEdit, SIGNAL(textChanged(QString)), this, SLOT(searchProcess(const QString &)));
     connect(ui.killProcessBtn, SIGNAL(clicked()), this, SLOT(killProcess()));
     connect(ui.diskRefreshBtn, SIGNAL(clicked()), this, SLOT(diskInfoRefresh()));
 
@@ -41,11 +50,11 @@ sysMonitor::sysMonitor(QWidget *parent) : QWidget(parent) {
 
 sysMonitor::~sysMonitor()
 {
-
 }
 
 /* 获取 ‘进程’ 页内容 */
-void sysMonitor::getProcessInfo() {
+void sysMonitor::getProcessInfo()
+{
     PROCESSENTRY32 pe32;
     pe32.dwSize = sizeof(pe32);
     HANDLE hProcessSnap;
@@ -55,27 +64,29 @@ void sysMonitor::getProcessInfo() {
 
     // 获得进程快照
     hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hProcessSnap == INVALID_HANDLE_VALUE) {
+    if (hProcessSnap == INVALID_HANDLE_VALUE)
+    {
         return;
     }
 
     int counter;
 
-    if(!Process32First(hProcessSnap, &pe32))
+    if (!Process32First(hProcessSnap, &pe32))
     {
         CloseHandle(hProcessSnap);
         return;
     }
 
-    do {
+    do
+    {
         DWORD pid = pe32.th32ProcessID;
         DWORD ppid = pe32.th32ParentProcessID;
         QString exeName =
             (QString::fromUtf16(reinterpret_cast<const unsigned short *>(
                 pe32.szExeFile)));
         DWORD threads = pe32.cntThreads;
-        priority = QString::number(pe32.pcPriClassBase);
         DWORD workingSetSize;
+        DWORD dwPriorityClass;
 
         // 尝试获取进程句柄
         // warning: 由于Windows对访问权限的（严重）控制
@@ -85,12 +96,12 @@ void sysMonitor::getProcessInfo() {
         hProcess = OpenProcess(PROCESS_ALL_ACCESS,
                                FALSE, pid);
 
-
         // 当访问权限不足时，返回hProcess为NULL
-        if(hProcess == NULL)
+        if (hProcess == NULL)
         {
             // 设置进程占用内存为0，表示无法获取
             workingSetSize = 0;
+            priority = "missing";
         }
         else
         {
@@ -101,65 +112,63 @@ void sysMonitor::getProcessInfo() {
             workingSetSize = pmc.WorkingSetSize;
 
             // 获取进程用户名
-//            HANDLE hToken;
-//            DWORD dwSize = 0;
-//            if(OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == TRUE)
-//            {
-//                if(GetTokenInformation(hToken, TokenUser, NULL, 0, &dwSize) == TRUE)
-//                {
-//                    PTOKEN_USER pTokenUser = (PTOKEN_USER)new BYTE[dwSize];
-//                    if(GetTokenInformation(hToken, TokenUser, pTokenUser, dwSize, &dwSize) == TRUE)
-//                    {
-//                        BOOL bLookupSid;
-//                        SID_NAME_USE snu;
-//                        TCHAR szUserName[1024];
-//                        int nLen = sizeof(szUserName) / sizeof(TCHAR);
-//                        DWORD dwUserSize = sizeof(szUserName) / sizeof(TCHAR);
-//                        TCHAR szDomain[1024];
-//                        DWORD cbDomain = sizeof(szDomain) / sizeof(TCHAR);
-//                        bLookupSid = LookupAccountSid(NULL, pTokenUser->User.Sid,
-//                                                      szUserName, &dwUserSize,
-//                                                      szDomain, &cbDomain, &snu);
-//                        if(bLookupSid)
-//                            processUsername = QString::fromUtf16(reinterpret_cast<const unsigned short *>(szUserName));
-//                        else
-//                            processUsername = "lookupsid error";
-//                    }
-//                }
-//                else
-//                    processUsername = (GetLastError() == ERROR_INSUFFICIENT_BUFFER?"shit":"");
-//            }
-//            else
-//                processUsername = "open process token error";
-
-
+            //            HANDLE hToken;
+            //            DWORD dwSize = 0;
+            //            if(OpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == TRUE)
+            //            {
+            //                if(GetTokenInformation(hToken, TokenUser, NULL, 0, &dwSize) == TRUE)
+            //                {
+            //                    PTOKEN_USER pTokenUser = (PTOKEN_USER)new BYTE[dwSize];
+            //                    if(GetTokenInformation(hToken, TokenUser, pTokenUser, dwSize, &dwSize) == TRUE)
+            //                    {
+            //                        BOOL bLookupSid;
+            //                        SID_NAME_USE snu;
+            //                        TCHAR szUserName[1024];
+            //                        int nLen = sizeof(szUserName) / sizeof(TCHAR);
+            //                        DWORD dwUserSize = sizeof(szUserName) / sizeof(TCHAR);
+            //                        TCHAR szDomain[1024];
+            //                        DWORD cbDomain = sizeof(szDomain) / sizeof(TCHAR);
+            //                        bLookupSid = LookupAccountSid(NULL, pTokenUser->User.Sid,
+            //                                                      szUserName, &dwUserSize,
+            //                                                      szDomain, &cbDomain, &snu);
+            //                        if(bLookupSid)
+            //                            processUsername = QString::fromUtf16(reinterpret_cast<const unsigned short *>(szUserName));
+            //                        else
+            //                            processUsername = "lookupsid error";
+            //                    }
+            //                }
+            //                else
+            //                    processUsername = (GetLastError() == ERROR_INSUFFICIENT_BUFFER?"shit":"");
+            //            }
+            //            else
+            //                processUsername = "open process token error";
+            //获取进程优先级
+            dwPriorityClass = GetPriorityClass(hProcess);
+            switch(dwPriorityClass)
+            {
+            case ABOVE_NORMAL_PRIORITY_CLASS:
+                priority = "above normal";
+                break;
+            case BELOW_NORMAL_PRIORITY_CLASS:
+                priority = "below normal";
+                break;
+            case HIGH_PRIORITY_CLASS:
+                priority = "high";
+                break;
+            case IDLE_PRIORITY_CLASS:
+                priority = "idle";
+                break;
+            case NORMAL_PRIORITY_CLASS:
+                priority = "normal";
+                break;
+            case REALTIME_PRIORITY_CLASS:
+                priority = "realtime";
+                break;
+            default:
+                priority = "missing";
+                break;
+            }
         }
-        // 获取进程优先级
-//        dwPriorityClass = GetPriorityClass(hProcess);
-//        switch(dwPriorityClass)
-//        {
-//        case ABOVE_NORMAL_PRIORITY_CLASS:
-//            priority = "above normal";
-//            break;
-//        case BELOW_NORMAL_PRIORITY_CLASS:
-//            priority = "below normal";
-//            break;
-//        case HIGH_PRIORITY_CLASS:
-//            priority = "high";
-//            break;
-//        case IDLE_PRIORITY_CLASS:
-//            priority = "idle";
-//            break;
-//        case NORMAL_PRIORITY_CLASS:
-//            priority = "normal";
-//            break;
-//        case REALTIME_PRIORITY_CLASS:
-//            priority = "realtime";
-//            break;
-//        case 0:
-//            priority = "unknown";
-//            break;
-//        }
 
         // 进程名和优先级部分可能会出现文本过长问题
         // 这里获取处理后的字符串
@@ -175,11 +184,11 @@ void sysMonitor::getProcessInfo() {
         ui.processInfo->setItem(counter, 5, new QTableWidgetItem(elidedPriority));
 
         // 如果出现文本过长，设置tooltip提示
-        if(elidedName != exeName)
+        if (elidedName != exeName)
             ui.processInfo->item(counter, 1)->setToolTip(exeName);
         else
             ui.processInfo->item(counter, 1)->setToolTip("");
-        if(elidedPriority != priority)
+        if (elidedPriority != priority)
             ui.processInfo->item(counter, 5)->setToolTip(priority);
         else
             ui.processInfo->item(counter, 5)->setToolTip("");
@@ -191,7 +200,7 @@ void sysMonitor::getProcessInfo() {
 
         CloseHandle(hProcess);
 
-    } while(Process32Next(hProcessSnap, &pe32));
+    } while (Process32Next(hProcessSnap, &pe32));
 
     CloseHandle(hProcessSnap);
 }
@@ -202,13 +211,14 @@ void sysMonitor::getSystemInfo()
     // 判断操作系统位数
     SYSTEM_INFO sysInfo;
     GetNativeSystemInfo(&sysInfo);
-    if(sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
-            sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
-        ui.osTypeLabel->setText("64-bit");
-    }
-    else {
-        ui.osTypeLabel->setText("32-bit");
-    }
+    QString bit;
+    if (sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
+        sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
+        bit = "64-bit";
+    else
+        bit = "32-bit";
+
+    ui.osTypeLabel->setText(bit + '\t' + QSysInfo::currentCpuArchitecture() + " based");
 
     // 获取设备运行时间
     DWORD ticks = GetTickCount();
@@ -226,7 +236,7 @@ void sysMonitor::getCpuInfo()
 {
     // 获取cpu型号
     // 实质是读取注册表内容
-    QSettings *CPU = new QSettings("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",QSettings::NativeFormat);
+    QSettings *CPU = new QSettings("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", QSettings::NativeFormat);
     QString m_cpuDescribe = CPU->value("ProcessorNameString").toString();
     delete CPU;
     ui.cpuInfoLabel->setText(m_cpuDescribe);
@@ -241,7 +251,8 @@ void sysMonitor::getCpuInfo()
 /*
  * 功能：计算两个 filetime 的差值
  */
-qint64 CompareFileTime(const FILETIME &time1, const FILETIME &time2) {
+qint64 CompareFileTime(const FILETIME &time1, const FILETIME &time2)
+{
     // 先将 filetime 转换为64位整数
     qint64 a = ((qint64(time1.dwHighDateTime) << 32) | time1.dwLowDateTime);
     qint64 b = ((qint64(time2.dwHighDateTime) << 32) | time2.dwLowDateTime);
@@ -267,7 +278,7 @@ double sysMonitor::getCpuUsage()
 
     GetSystemTimes(&idleTime, &kernelTime, &userTime);
 
-    if(!flag)
+    if (!flag)
     {
         flag = true;
         pre_idleTime = idleTime;
@@ -281,7 +292,7 @@ double sysMonitor::getCpuUsage()
     qint64 kernel = CompareFileTime(pre_kernelTime, kernelTime);
     qint64 user = CompareFileTime(pre_userTime, userTime);
 
-    if(kernel + user == 0)
+    if (kernel + user == 0)
         return 0.0;
 
     double ratio = qAbs(double((kernel + user - idle)) * 100 / (kernel + user));
@@ -303,15 +314,19 @@ double sysMonitor::getMemoryUsage()
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof(statex);
     GlobalMemoryStatusEx(&statex);
-    double m_totalMem = statex.ullTotalPhys * 1.0/ GBytes;
+    double m_totalMem = statex.ullTotalPhys * 1.0 / GBytes;
     double m_freeMem = statex.ullAvailPhys * 1.0 / GBytes;
     double memUsage = 100 * (1 - (statex.ullAvailPhys * 1.0 / statex.ullTotalPhys));
+    double m_totalVirtualMem = statex.ullTotalVirtual * 1.0 / GBytes;
+    double m_freeVirtualMem = statex.ullAvailVirtual * 1.0 / GBytes;
 
     // 顺便把 label 也改了
     ui.totalMemoryLabel->setText(QString::number(m_totalMem, 'f', 1) + "  GB");
-    ui.inUseMemoryLabel->setText(QString::number(m_totalMem - m_freeMem, 'f', 1) + " GB");
-    ui.availableMemoryLabel->setText(QString::number(m_freeMem, 'f', 1) + " GB");
+    ui.inUseMemoryLabel->setText(QString::number(m_totalMem - m_freeMem, 'f', 1) + "  GB");
+    ui.availableMemoryLabel->setText(QString::number(m_freeMem, 'f', 1) + "  GB");
     ui.memoryUsageLabel->setText(QString::number(memUsage, 'f', 2) + "%");
+    ui.totalVirtualMemoryLabel->setText(QString::number(m_totalVirtualMem, 'f', 1) + "  GB");
+    ui.availableVirtualMemoryLabel->setText(QString::number(m_freeVirtualMem, 'f', 1) + "  GB");
 
     return memUsage;
 }
@@ -323,19 +338,19 @@ void sysMonitor::getDiskInfo()
     // 获取所有盘符
     QFileInfoList list = QDir::drives();
     // 遍历盘符列表
-    foreach(QFileInfo dir, list)
+    foreach (QFileInfo dir, list)
     {
         QString dirName = dir.absolutePath();
         dirName.remove("/");
         LPCWSTR lpcwstrDriver = (LPCWSTR)dirName.utf16();
         ULARGE_INTEGER liFreeBytesAvilale, liTotalBytes, liTotalFreeBytes;
-        if(GetDiskFreeSpaceEx(lpcwstrDriver, &liFreeBytesAvilale, &liTotalBytes, &liTotalFreeBytes))
+        if (GetDiskFreeSpaceEx(lpcwstrDriver, &liFreeBytesAvilale, &liTotalBytes, &liTotalFreeBytes))
         {
             QString free = QString::number(1.0 * liTotalFreeBytes.QuadPart / GBytes, 'f', 1);
             free += 'G';
             QString all = QString::number(1.0 * liTotalBytes.QuadPart / GBytes, 'f', 1);
             all += 'G';
-            QString usage = QString::number(100.0 * liTotalFreeBytes.QuadPart / liTotalBytes.QuadPart, 'f', 2);
+            QString usage = QString::number(100.0 - 100.0 * liTotalFreeBytes.QuadPart / liTotalBytes.QuadPart, 'f', 2);
             usage += '%';
 
             QString str = QString("%1\t%2 / %3\t\t\t%4 used\n\n").arg(dirName, free, all, usage);
@@ -353,7 +368,7 @@ void sysMonitor::ProcessInfoRefresh()
     // 记录原来的滚动条位置
     int currentValue = ui.processInfo->verticalScrollBar()->value();
     // 判断当前有没有选择某一行
-    if(!ui.processInfo->selectedItems().empty())
+    if (!ui.processInfo->selectedItems().empty())
     {
         // 如果有，记录选择的行数
         selectedRow = ui.processInfo->selectedItems().first()->row();
@@ -362,7 +377,7 @@ void sysMonitor::ProcessInfoRefresh()
     ui.processInfo->model()->removeRows(0, ui.processInfo->rowCount());
     getProcessInfo();
     // 刷新内容后，原来的选择信息会丢失，这里重新设置回原来的选择
-    if(flag)
+    if (flag)
         ui.processInfo->selectRow(selectedRow);
     // 执行selectRow后，会自动滚动到所选行附近
     // 通过恢复滚动条位置，解决上述问题
@@ -411,10 +426,10 @@ void sysMonitor::refresh()
  */
 void sysMonitor::handleCellEntered(int row, int column)
 {
-    if(column != 1 && column != 5)
+    if (column != 1 && column != 5)
         return;
     QTableWidgetItem *item = ui.processInfo->item(row, column);
-    if(item == nullptr)
+    if (item == nullptr)
         return;
     if (item->toolTip() != "")
         QToolTip::showText(QCursor::pos(), item->toolTip());
@@ -427,7 +442,7 @@ void sysMonitor::handleCellEntered(int row, int column)
 void sysMonitor::handleSelectionChanged()
 {
     QList<QTableWidgetItem *> items = ui.processInfo->selectedItems();
-    if(items.empty())
+    if (items.empty())
         ui.killProcessBtn->setEnabled(false);
     else
         ui.killProcessBtn->setEnabled(true);
@@ -440,10 +455,10 @@ void sysMonitor::handleSelectionChanged()
  */
 void sysMonitor::searchProcess(const QString &key)
 {
-    if(key == "")
+    if (key == "")
         ui.processInfo->clearSelection();
     QList<QTableWidgetItem *> items = ui.processInfo->findItems(key, Qt::MatchContains);
-    if(!items.empty())
+    if (!items.empty())
     {
         int first = items.first()->row();
         ui.processInfo->selectRow(first);
@@ -458,14 +473,14 @@ void sysMonitor::searchProcess(const QString &key)
 void sysMonitor::killProcess()
 {
     QList<QTableWidgetItem *> items = ui.processInfo->selectedItems();
-    if(items.empty())
+    if (items.empty())
         return;
     int row = items.first()->row();
     DWORD pid = ui.processInfo->item(row, 0)->text().toULong();
     HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-    if(hProc == NULL)
+    if (hProc == NULL)
         return;
-    if(TerminateProcess(hProc, 0) == TRUE)
+    if (TerminateProcess(hProc, 0) == TRUE)
     {
         ProcessInfoRefresh();
         ui.processInfo->clearSelection();
