@@ -1,6 +1,8 @@
 # System Monitor
 HUST Opeating System course homework in 2019 summer
+
 The system monitor app is written in C++ and developed on Qt Creator
+
 The app acquires and shows some basic device information
 
 ## Compile environment
@@ -17,5 +19,5 @@ The app acquires and shows some basic device information
 informations are acquired through WIN32 API
 
 <div align="center">
-    <img src="screenshots/cpu.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshots/memory.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshots/about.png">
+    <img src="screenshoots/cpu.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/memory.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/about.png">
 </div>
