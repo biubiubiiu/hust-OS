@@ -19,5 +19,5 @@ The app acquires and shows some basic device information
 informations are acquired through WIN32 API
 
 <div align="center">
-    <img src="screenshoots/cpu.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/memory.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/about.png">
+    <img src="screenshoots/cpu.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/other.png">&nbsp;&nbsp;&nbsp;&nbsp;<img src="screenshoots/about.png">
 </div>
